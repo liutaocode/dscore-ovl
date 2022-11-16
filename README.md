@@ -9,8 +9,15 @@ In this repo, we modified ``dscore`` to report errors in overlapped speech detec
 
 Other unmentioned ilustrations can be found on the official repo [here](https://github.com/nryant/dscore).
 
+**Usages**:
+```
+python score.py -r ref_rttm -s sys_rttm --collar 0.25 or 0
+```
 
-Results:
+* ``ref_rttm`` --- the reference rttm from the ground truth
+* ``sys_rttm`` --- the system or hypothesis rttm from the models' prediction
+
+**Results**:
 ```
 collar    MS        FA         SC        OVL       DER        JER
 ------  ------  ----------  --------  --------  ---------  ---------
