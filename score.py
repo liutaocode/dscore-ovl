@@ -160,7 +160,7 @@ def load_script_file(fn):
         return [line.decode('utf-8').strip() for line in f]
 
 
-def print_table(file_scores, global_scores, n_digits=2,
+def print_table(file_scores, global_scores, collar, n_digits=2,
                 table_format='simple'):
     """Pretty print scores as table.
 
@@ -180,22 +180,29 @@ def print_table(file_scores, global_scores, n_digits=2,
         Table format. Passed to ``tabulate.tabulate``.
         (Default: 'simple')
     """
-    col_names = ['File',
-                 'DER', # Diarization error rate.
-                 'JER', # Jaccard error rate.
-                 'B3-Precision', # B-cubed precision.
-                 'B3-Recall', # B-cubed recall.
-                 'B3-F1', # B-cubed F1.
-                 'GKT(ref, sys)', # Goodman-Krustal tau (ref, sys).
-                 'GKT(sys, ref)', # Goodman-Kruskal tau (sys, ref).
-                 'H(ref|sys)',  # Conditional entropy of ref given sys.
-                 'H(sys|ref)',  # Conditional entropy of sys given ref.
-                 'MI', # Mutual information.
-                 'NMI', # Normalized mutual information.
-                ]
-    rows = sorted(file_scores, key=lambda x: x.file_id)
-    rows.append(global_scores._replace(file_id='*** OVERALL ***'))
+    # col_names = ['File',
+    #              'DER', # Diarization error rate.
+    #              'JER', # Jaccard error rate.
+    #              'B3-Precision', # B-cubed precision.
+    #              'B3-Recall', # B-cubed recall.
+    #              'B3-F1', # B-cubed F1.
+    #              'GKT(ref, sys)', # Goodman-Krustal tau (ref, sys).
+    #              'GKT(sys, ref)', # Goodman-Kruskal tau (sys, ref).
+    #              'H(ref|sys)',  # Conditional entropy of ref given sys.
+    #              'H(sys|ref)',  # Conditional entropy of sys given ref.
+    #              'MI', # Mutual information.
+    #              'NMI', # Normalized mutual information.
+    #             ]
+    # rows = sorted(file_scores, key=lambda x: x.file_id)
+    # rows.append(global_scores._replace(file_id='*** OVERALL ***'))
+    # floatfmt = '.%df' % n_digits
+    
     floatfmt = '.%df' % n_digits
+    rows = []
+    col_names = ['collar', 'MS', 'FA', 'SC', 'OVL', 'DER', 'JER']
+    
+    rows.append((collar, global_scores.ms, global_scores.fa, global_scores.sc, global_scores.ovl, global_scores.der, global_scores.jer))
+
     tbl = tabulate(
         rows, headers=col_names, floatfmt=floatfmt, tablefmt=table_format)
     print(tbl)
@@ -304,7 +311,7 @@ def main():
         jer_min_ref_dur=args.jer_min_ref_dur, collar=args.collar,
         ignore_overlaps=args.ignore_overlaps)
     print_table(
-        file_scores, global_scores, args.n_digits, args.table_format)
+        file_scores, global_scores, args.collar, args.n_digits, args.table_format)
 
 
 if __name__ == '__main__':

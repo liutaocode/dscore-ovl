@@ -96,7 +96,7 @@ def flatten_labels(labels):
 
 class Scores(namedtuple(
         'Scores',
-        ['file_id', 'der', 'jer', 'bcubed_precision', 'bcubed_recall',
+        ['file_id', 'ms', 'fa', 'sc' , 'ovl', 'der', 'jer', 'bcubed_precision', 'bcubed_recall',
          'bcubed_f1', 'tau_ref_sys', 'tau_sys_ref', 'ce_ref_sys',
          'ce_sys_ref', 'mi', 'nmi'])):
     """Structure containing metrics.
@@ -228,9 +228,21 @@ def score(ref_turns, sys_turns, uem, step=0.010, nats=False, jer_min_ref_dur=0.0
     # consistency with how the clustering metrics were computed in DIHARD I.
 
     # Compute DER. This bit is slow as it relies on NIST's perl script.
-    file_to_der, global_der = metrics.der(
+    kwargs["ignore_overlaps"] = False
+    # miss_speaker_times[-1], fa_speaker_times[-1], error_speaker_times[-1]
+    file_to_der, global_der_1,error_times_1, scored_speaker_times_1, ms_times, fa_times, sc_times = metrics.der(
         ref_turns, sys_turns, uem=uem, **kwargs)
 
+    kwargs["ignore_overlaps"] = True
+    file_to_der, global_der_2,error_times_2, scored_speaker_times_2, _, _, _ = metrics.der(
+        ref_turns, sys_turns, uem=uem, **kwargs)
+
+    # add ovl and detailed info for dscore
+    ovl = (error_times_1 - error_times_2)/(scored_speaker_times_1)  * 100
+    fa_rate = fa_times/scored_speaker_times_1 * 100
+    ms_rate = ms_times/scored_speaker_times_1 * 100
+    sc_rate = sc_times/scored_speaker_times_1 * 100
+ 
     # Compute JER.
     file_to_jer, global_jer = metrics.jer(
         file_to_ref_durs, file_to_sys_durs, file_to_jer_cm, jer_min_ref_dur)
@@ -244,14 +256,16 @@ def score(ref_turns, sys_turns, uem, step=0.010, nats=False, jer_min_ref_dur=0.0
         ce_ref_sys = metrics.conditional_entropy(None, None, cm, nats)
         ce_sys_ref = metrics.conditional_entropy(None, None, cm.T, nats)
         mi, nmi = metrics.mutual_information(None, None, cm, nats)
+        # 'file_id', 'fa', 'ms', 'sc' , 'ovl', 'der', 'jer
+
         return Scores(
-            fid, der, jer, bcubed_precision, bcubed_recall, bcubed_f1,
+            fid, ms_rate, fa_rate, sc_rate, ovl, der, jer, bcubed_precision, bcubed_recall, bcubed_f1,
             tau_ref_sys, tau_sys_ref, ce_ref_sys, ce_sys_ref, mi, nmi)
     file_scores = []
-    for file_id, cm in iteritems(file_to_cm):
-        file_scores.append(compute_metrics(
-            file_id, cm, file_to_der[file_id], jer=file_to_jer[file_id]))
+    # for file_id, cm in iteritems(file_to_cm):
+    #     file_scores.append(compute_metrics(
+    #         file_id, cm, file_to_der[file_id], jer=file_to_jer[file_id]))
     global_scores = compute_metrics(
-        '*** OVERALL ***', global_cm, global_der, global_jer)
+        '*** OVERALL ***', global_cm, global_der_1, global_jer)
 
     return file_scores, global_scores

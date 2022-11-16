@@ -480,6 +480,7 @@ def der(ref_turns, sys_turns, collar=0.0, ignore_overlaps=False, uem=None):
     with np.errstate(invalid='ignore', divide='ignore'):
         error_times = miss_speaker_times + fa_speaker_times + error_speaker_times
         ders = error_times / scored_speaker_times
+        
     ders[np.isnan(ders)] = 0 # Numerator and denominator both 0.
     ders[np.isinf(ders)] = 1 # Numerator > 0, but denominator = 0.
     ders *= 100. # Convert to percent.
@@ -487,22 +488,24 @@ def der(ref_turns, sys_turns, collar=0.0, ignore_overlaps=False, uem=None):
     # Reconcile with UEM, keeping in mind that in the edge case where no
     # reference turns are observed for a file, md-eval doesn't report results
     # for said file.
+    # print(file_ids)
     file_to_der_base = dict(zip(file_ids, ders))
+    # print(file_to_der_base)
     file_to_der = {}
-    for file_id in uem:
-        try:
-            der = file_to_der_base[file_id]
-        except KeyError:
-            # Check for any system turns for that file, which should be FAs,
-            # assuming that the turns have been cropped to the UEM scoring
-            # regions.
-            n_sys_turns = len(
-                [turn for turn in sys_turns if turn.file_id == file_id])
-            der = 100. if n_sys_turns else 0.0
-        file_to_der[file_id] = der
+    # for file_id in uem:
+    #     try:
+    #         der = file_to_der_base[file_id]
+    #     except KeyError:
+    #         # Check for any system turns for that file, which should be FAs,
+    #         # assuming that the turns have been cropped to the UEM scoring
+    #         # regions.
+    #         n_sys_turns = len(
+    #             [turn for turn in sys_turns if turn.file_id == file_id])
+    #         der = 100. if n_sys_turns else 0.0
+    #     file_to_der[file_id] = der
     global_der = file_to_der_base['ALL']
 
-    return file_to_der, global_der
+    return file_to_der, global_der , error_times[-1], scored_speaker_times[-1], miss_speaker_times[-1], fa_speaker_times[-1], error_speaker_times[-1]
 
 
 def jer(file_to_ref_durs, file_to_sys_durs, file_to_cm, min_ref_dur=0):
